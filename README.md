@@ -2,15 +2,6 @@
 
 Starter repository for an API backend and web chatbot that support the `cyber-shell` / PTY wrapper.
 
-## Goals
-
-- Receive telemetry from the wrapper on the current endpoint: `POST /api/terminal-events`
-- Authenticate with `Authorization: Bearer <API_KEY>`
-- Store command logs in a database
-- Provide a web chatbot using the **new Google Gen AI SDK** (`google-genai`), not the legacy library
-- Give the AI database query tools so it can understand which blockers the user is facing
-- Include a basic HTTP tool to safely verify selected endpoints
-
 ## Current wrapper payload contract
 
 The current `cyber-shell` repo sends JSON with these fields:
