@@ -11,18 +11,6 @@ Starter repository for an API backend and web chatbot that support the `cyber-sh
 - Give the AI database query tools so it can understand which blockers the user is facing
 - Include a basic HTTP tool to safely verify selected endpoints
 
-
-## UI improvements in this version
-
-- The web UI now renders assistant replies as Markdown, including headings, lists, emphasis, and code blocks.
-
-- Session cards now show inferred lab badges (`CMD`, `SQL`, `IDOR`) so mixed traffic is easier to separate.
-- The event view supports per-lab tabs and keyword filtering instead of dumping raw JSON.
-- The event center is split into a paged event list plus a detail pane, so long output no longer makes the page hard to follow.
-- Each event shows inferred lab, findings, status, and can be opened to inspect full output and metadata.
-- Chats are persisted in the database with per-session conversation history and remain available after reload.
-- The UI also remembers the last selected session, lab tab, chat, and page size in the browser.
-
 ## Current wrapper payload contract
 
 The current `cyber-shell` repo sends JSON with these fields:
@@ -119,9 +107,3 @@ The server:
 - `get_recent_events`
 - `search_events`
 - `send_http_request`
-
-## Security notes
-
-- The chatbot currently has no login. If you expose it publicly, place it behind a reverse proxy with auth/SSO.
-- The HTTP tool defaults to `GET,HEAD` and only allows requests to allowlisted hosts.
-- If you want stronger mapping for the "current user", add `metadata.user_id` or `metadata.lab_user` from the PTY wrapper in the next version.
