@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cyber Shell Assistant</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Cyber Range Assistant</div>
+        <h1>Cyber Shell Assistant</h1>
+      </div>
+      <div class="topbar-actions">
+        <button id="refreshSessions" class="secondary">Refresh sessions</button>
+      </div>
+    </header>
+
+    <div class="page-grid">
+      <aside class="panel sessions-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Sessions</h2>
+            
+          </div>
+          <select id="labFilter" class="compact-select">
+            <option value="">All labs</option>
+            <option value="cmd-web">CMD</option>
+            <option value="sql-web">SQL</option>
+            <option value="idor-web">IDOR</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div id="sessionList" class="session-list"></div>
+      </aside>
+
+      <main class="panel events-panel">
+        <div class="panel-header sticky">
+          <div>
+            <h2 id="sessionTitle">Choose a session</h2>
+            <p id="sessionMeta" class="muted"></p>
+          </div>
+          <div class="overview" id="overviewChips"></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="chip-row" id="labTabs">
+            <button class="chip active" data-lab="all">All</button>
+            <button class="chip" data-lab="cmd-web">CMD</button>
+            <button class="chip" data-lab="sql-web">SQL</button>
+            <button class="chip" data-lab="idor-web">IDOR</button>
+            <button class="chip" data-lab="other">Other</button>
+          </div>
+          <div class="toolbar-row">
+            <input id="eventSearch" type="search" placeholder="Filter commands or output, e.g. ping.php, uid=, idor_profile.php">
+            <select id="pageSizeSelect" class="compact-select">
+              <option value="1">1 / page</option>
+              <option value="5" selected>5 / page</option>
+              <option value="10">10 / page</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="events-content">
+          <section class="event-list-panel">
+            <div id="eventList" class="event-list empty-state">No session selected.</div>
+            <div class="pagination-bar" id="paginationBar">
+              <button id="prevPageBtn" class="secondary">Previous</button>
+              <div id="paginationInfo" class="muted">Page 0 / 0</div>
+              <button id="nextPageBtn" class="secondary">Next</button>
+            </div>
+          </section>
+          <aside class="event-detail-panel" id="eventDetailPanel">
+            <div class="detail-empty">
+              Open an event to inspect the full command, metadata, and output without stretching the page.
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <aside class="panel chat-panel">
+        <div class="panel-header sticky">
+          <div>
+            <h2>Chat</h2>
+            
+          </div>
+          <button id="newChatBtn" class="secondary">New chat</button>
+        </div>
+
+        <div class="chat-thread" id="chatThread"></div>
+
+        <form id="chatForm" class="chat-form">
+          <textarea id="messageInput" rows="3" placeholder="Ask about the selected session"></textarea>
+          <button type="submit">Send</button>
+        </form>
+      </aside>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

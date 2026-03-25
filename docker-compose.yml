@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cyber_shell
+      POSTGRES_USER: cyber
+      POSTGRES_PASSWORD: cyber
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cyber -d cyber_shell"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://cyber:cyber@db:5432/cyber_shell}
+      APP_PORT: ${APP_PORT:-60080}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-60080}:${APP_PORT:-60080}"
+
+volumes:
+  postgres_data:
