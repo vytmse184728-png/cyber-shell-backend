@@ -39,21 +39,21 @@ docker compose up --build
 
 4. Open:
 
-- Web UI: `http://127.0.0.1:60080/`
-- Health: `http://127.0.0.1:60080/health`
+- Web UI: `http://127.0.0.1:60081/`
+- Health: `http://127.0.0.1:60081/health`
 
 ## Point the wrapper to this backend
 
 Because the current endpoint contract is `/api/terminal-events`, you only need to point the wrapper to the new backend:
 
 ```bash
-cyber-shell   --endpoint-url http://127.0.0.1:60080/api/terminal-events   --api-key replace-me
+cyber-shell   --endpoint-url http://127.0.0.1:60081/api/terminal-events   --api-key replace-me
 ```
 
 ## Test ingestion with curl
 
 ```bash
-curl -i -X POST http://127.0.0.1:60080/api/terminal-events   -H "Content-Type: application/json"   -H "Authorization: Bearer replace-me"   -d '{
+curl -i -X POST http://127.0.0.1:60081/api/terminal-events   -H "Content-Type: application/json"   -H "Authorization: Bearer replace-me"   -d '{
     "session_id":"s1",
     "seq":1,
     "cmd":"whoami",
@@ -79,7 +79,7 @@ curl -i -X POST http://127.0.0.1:60080/api/terminal-events   -H "Content-Type: a
 - `DATABASE_URL`: Postgres or SQLite connection DSN
 - `HTTP_TOOL_ALLOWED_HOSTS`: host allowlist for the HTTP tool
 - `HTTP_TOOL_ALLOWED_METHODS`: defaults to `GET,HEAD`
-- `APP_PORT`: exposed port for the web/API container, defaults to `60080`
+- `APP_PORT`: exposed port for the web/API container, defaults to `60081`
 
 ## Chat flow
 
