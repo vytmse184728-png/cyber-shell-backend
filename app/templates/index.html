@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cyber Shell Assistant</title>
+  <link rel="stylesheet" href="/static/app.css?v=6">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Cyber Range Assistant</div>
+        <h1>Cyber Shell Assistant</h1>
+      </div>
+      <div class="topbar-actions">
+        <button id="refreshSessions" class="secondary">Refresh sessions</button>
+      </div>
+    </header>
+
+    <div class="page-grid">
+      <aside class="panel sessions-panel">
+        <div class="panel-header sessions-header">
+          <div>
+            <h2>Sessions</h2>
+            <p id="sessionSummary" class="muted session-summary">Recent shells</p>
+          </div>
+        </div>
+        <div id="sessionList" class="session-list"></div>
+      </aside>
+
+      <main class="panel events-panel">
+        <div class="panel-header sticky">
+          <div>
+            <h2 id="sessionTitle">Choose a session</h2>
+            <p id="sessionMeta" class="muted"></p>
+          </div>
+        </div>
+
+        <div id="eventStream" class="event-stream">
+          <div id="streamTopLoader" class="stream-loader hidden">Loading older events…</div>
+          <div id="eventStreamItems" class="event-stream-items empty-state">No session selected.</div>
+        </div>
+      </main>
+
+      <aside class="panel chat-panel">
+        <div class="panel-header sticky">
+          <div>
+            <h2>Chat</h2>
+            <p class="muted">Use the selected session as context, then ask the assistant to analyze logs or verify the fixed target with the HTTP tool.</p>
+          </div>
+          <button id="newChatBtn" class="secondary">New chat</button>
+        </div>
+
+        <div class="chat-thread" id="chatThread"></div>
+
+        <form id="chatForm" class="chat-form">
+          <textarea id="messageInput" rows="5" placeholder="Ask about the selected session or request an HTTP check"></textarea>
+          <div class="chat-actions">
+            <div id="chatLoadingNote" class="chat-loading-note" aria-live="polite"></div>
+            <button type="submit" id="sendButton" class="loading-button">
+              <span class="button-spinner" aria-hidden="true"></span>
+              <span id="sendButtonLabel">Send</span>
+            </button>
+          </div>
+        </form>
+      </aside>
+    </div>
+  </div>
+
+  <div id="eventModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-modal-close="true"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+      <div class="modal-header">
+        <div>
+          <h3 id="eventModalTitle">Event Details</h3>
+          <p id="eventModalMeta" class="muted modal-meta"></p>
+        </div>
+        <button type="button" id="closeEventModal" class="secondary modal-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="eventModalCommand" class="modal-command"></div>
+        <pre id="eventModalOutput" class="timeline-output modal-block"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="/static/app.js?v=6"></script>
+</body>
+</html>
