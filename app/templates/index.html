@@ -4,14 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cyber Shell Assistant</title>
-  <link rel="stylesheet" href="/static/app.css?v=6">
+  <link rel="stylesheet" href="/static/app.css?v=8">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div>
+      <div class="topbar-brand">
         <div class="eyebrow">Cyber Range Assistant</div>
-        <h1>Cyber Shell Assistant</h1>
+        <div class="title-row">
+          <h1>Cyber Shell Assistant</h1>
+          <span class="topbar-badge">Live Ops</span>
+        </div>
+        <p class="topbar-subtitle">Triage shell activity, inspect HTTP evidence, and drive session-aware chat from one console.</p>
       </div>
       <div class="topbar-actions">
         <button id="refreshSessions" class="secondary">Refresh sessions</button>
@@ -47,7 +51,7 @@
         <div class="panel-header sticky">
           <div>
             <h2>Chat</h2>
-            <p class="muted">Use the selected session as context, then ask the assistant to analyze logs or verify the fixed target with the HTTP tool.</p>
+            <p class="muted">Ask for log analysis, Burp evidence review, or fixed-target verification with the HTTP tool.</p>
           </div>
           <button id="newChatBtn" class="secondary">New chat</button>
         </div>
@@ -55,7 +59,7 @@
         <div class="chat-thread" id="chatThread"></div>
 
         <form id="chatForm" class="chat-form">
-          <textarea id="messageInput" rows="5" placeholder="Ask about the selected session or request an HTTP check"></textarea>
+          <textarea id="messageInput" rows="4" placeholder="Ask about the selected session, review Burp traffic, or request an HTTP check"></textarea>
           <div class="chat-actions">
             <div id="chatLoadingNote" class="chat-loading-note" aria-live="polite"></div>
             <button type="submit" id="sendButton" class="loading-button">
@@ -86,6 +90,6 @@
   </div>
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=8"></script>
 </body>
 </html>

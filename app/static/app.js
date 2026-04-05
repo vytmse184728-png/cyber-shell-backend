@@ -75,6 +75,20 @@ function formatDate(isoString) {
   return Number.isNaN(date.getTime()) ? isoString : date.toLocaleString();
 }
 
+function formatCompactDate(isoString) {
+  if (!isoString) return 'Unknown time';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return isoString;
+  try {
+    return date.toLocaleString([], {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  } catch (_err) {
+    return date.toLocaleString();
+  }
+}
+
 function formatRelativeTime(isoString) {
   if (!isoString) return 'Unknown';
   const date = new Date(isoString);
@@ -323,14 +337,21 @@ function timelineEventItem(item) {
   const hasLongContent = isLongContent(item.cmd) || isLongContent(item.output);
   const previewCommand = previewContent(item.cmd || '');
   const previewOutput = previewContent(item.output || '');
+  const finishedAt = formatCompactDate(item.finished_at);
+  const finishedAtFull = formatDate(item.finished_at);
+  const eventMetaBits = [
+    `seq ${escapeHtml(item.seq)}`,
+    `exit ${escapeHtml(item.exit_code)}`,
+  ];
+  if (item.cwd) {
+    eventMetaBits.push(escapeHtml(item.cwd));
+  }
 
   return `
     <article class="timeline-event" data-event-id="${item.id}">
       <div class="timeline-event-top">
-        <div>
-          <div class="timeline-event-time">${escapeHtml(formatDate(item.finished_at))}</div>
-          <div class="timeline-event-sub">seq ${escapeHtml(item.seq)} · exit ${escapeHtml(item.exit_code)} · ${escapeHtml(item.cwd || '')}</div>
-        </div>
+        <time class="timeline-event-time" datetime="${escapeHtml(item.finished_at || '')}" title="${escapeHtml(finishedAtFull)}">${escapeHtml(finishedAt)}</time>
+        <div class="timeline-event-sub">${eventMetaBits.join(' · ')}</div>
       </div>
       ${renderPromptLine(item, previewCommand)}
       <pre class="timeline-output">${escapeHtml(previewOutput)}</pre>
