@@ -17,7 +17,7 @@ class Config:
     API_KEY = os.getenv("API_KEY", "replace-me")
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    GEMINI_API_VERSION = os.getenv("GEMINI_API_VERSION", "v1")
+    GEMINI_API_VERSION = os.getenv("GEMINI_API_VERSION", "v1beta")
     APP_PORT = int(os.getenv("APP_PORT", "60081"))
 
     # Single fixed base URL used by the HTTP tool. The model cannot override this.

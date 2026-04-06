@@ -51,15 +51,26 @@ def build_system_prompt() -> str:
     alias_text = "\n".join(alias_lines) if alias_lines else "- No site aliases were inferred."
 
     return f"""
-You are a testing support assistant for Cyber Shell.
+You are Cyber Shell's testing support assistant for red-team lab workflows.
 
-MISSION:
-- Only provide guidance, explanations, concise assessments, and next steps.
-- Never claim you performed a pentest, ran a command, or confirmed an exploit without direct evidence in the logs or tool output.
-- Start conservatively. Use the database tools before drawing conclusions.
-- Distinguish between evidence of an attempt, evidence of successful execution, and inconclusive results.
-- If you need to verify an HTTP service, only use the send_http_request tool within the allowed limits.
-- Never pass session_id, hostname, or keyword to send_http_request.
+PRIMARY ROLE:
+- Help the user analyze terminal telemetry, Burp-side evidence, and constrained HTTP verification results.
+- Give grounded assessments, next steps, and concise operator guidance.
+- Prefer accuracy over confidence. If evidence is incomplete, say so plainly.
+
+EVIDENCE STANDARD:
+- Never claim you performed a pentest, ran a shell command, created a Burp tab, sent a Burp request, or confirmed an exploit unless the relevant tool output explicitly proves it.
+- Distinguish clearly between:
+  - evidence of a request or attempt
+  - evidence of a successful action
+  - a hypothesis or likely vulnerability
+  - missing or inconclusive evidence
+- If the user asks whether something succeeded, answer from tool output only. Do not infer success from intent.
+
+TOOL USAGE POLICY:
+- Start conservatively. Use database/log tools before drawing conclusions.
+- If you need to verify an HTTP service, only use `send_http_request` within the allowed limits.
+- Never pass session_id, hostname, or keyword to `send_http_request`.
 - The HTTP tool does not accept a URL from the model.
 - The backend always uses this fixed base URL: {target_url}
 - Allowed Host header values: {host_headers_text}
@@ -68,9 +79,20 @@ MISSION:
 - The Host header must come from the allowlist.
 - Never invent or override the fixed base URL.
 {alias_text}
-- Only ask a brief follow-up if multiple valid Host header choices remain ambiguous.
-- If there is not enough data, clearly say which additional logs or commands are needed.
-- Reply in English, concise, practical, and easy to scan.
+
+LOCAL BURP MCP BRIDGE RULES:
+- `query_local_mcp` is a client-side relay tool, not direct unrestricted control of Burp.
+- Treat `query_local_mcp` as a constrained local evidence-query interface. It may return Burp proxy history, scanner issues, websocket history, or a list of available MCP tools.
+- Do not assume `query_local_mcp` can execute arbitrary side-effecting Burp actions.
+- Never claim that `create_repeater_tab`, `send_http1_request`, or any other MCP function was executed unless the returned local tool result explicitly confirms that exact action and its outcome.
+- If the user requests a Burp-side action that is not explicitly confirmed by the local tool result, explain that the current relay may not support that action reliably and ask the user to verify manually or request an implemented alternative.
+
+RESPONSE STYLE:
+- Reply in English.
+- Be concise, practical, and easy to scan.
+- Prefer short sections and bullet points when helpful.
+- Only ask a brief follow-up if a required tool input is genuinely ambiguous.
+- If there is not enough data, state which additional logs, Burp evidence, or HTTP checks are needed.
 """.strip()
 
 
@@ -91,6 +113,20 @@ def _tool_declarations() -> list[types.Tool]:
     return [
         types.Tool(
             function_declarations=[
+                types.FunctionDeclaration(
+                    name="query_local_mcp",
+                    description="Query the user's local Burp Suite MCP bridge for proxy history, websocket history, scanner issues, or tool inventory. This tool runs locally on the client and is primarily for evidence retrieval, not guaranteed side-effecting actions.",
+                    parameters_json_schema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Natural-language request for Burp evidence, such as 'show full proxy history', 'search proxy history for login', 'list available Burp MCP tools', or 'show scanner issues'.",
+                            }
+                        },
+                        "required": ["query"],
+                    },
+                ),
                 types.FunctionDeclaration(
                     name="get_session_overview",
                     description="Get a high-level summary of the current shell session to determine which lab the user is touching, recent commands, and likely blockers.",
@@ -168,14 +204,34 @@ def _tool_declarations() -> list[types.Tool]:
     ]
 
 
-def _history_to_contents(history: list[dict[str, str]] | None) -> list[types.Content]:
+def _history_to_contents(history: list[dict[str, Any]] | None) -> list[types.Content]:
     contents: list[types.Content] = []
     for item in (history or [])[-16:]:
+        role = str(item.get("role") or "user")
+        if role == "tool":
+            tool_name = str(item.get("tool_name") or "").strip()
+            if not tool_name:
+                continue
+            part_kwargs = {
+                "name": tool_name,
+                "response": {"result": item.get("tool_result")},
+            }
+            tool_call_id = item.get("tool_call_id")
+            if tool_call_id:
+                part_kwargs["id"] = tool_call_id
+            contents.append(
+                types.Content(
+                    role="tool",
+                    parts=[types.Part.from_function_response(**part_kwargs)],
+                )
+            )
+            continue
+
         text = (item.get("text") or "").strip()
         if not text:
             continue
-        role = "model" if item.get("role") in {"assistant", "model"} else "user"
-        contents.append(types.Content(role=role, parts=[types.Part.from_text(text=text)]))
+        model_role = "model" if role in {"assistant", "model"} else "user"
+        contents.append(types.Content(role=model_role, parts=[types.Part.from_text(text=text)]))
     return contents
 
 
@@ -215,9 +271,13 @@ def _dispatch_tool(name: str, args: dict[str, Any], default_session_id: str | No
 
 def run_chat(
     *,
-    message: str,
+    message: str | None = None,
     session_id: str | None = None,
-    history: list[dict[str, str]] | None = None,
+    history: list[dict[str, Any]] | None = None,
+    tool_name: str | None = None,
+    tool_result: Any | None = None,
+    tool_call_id: str | None = None,
+    tool_args: dict[str, Any] | None = None,
 ) -> dict:
     gemini_api_key = current_app.config.get("GEMINI_API_KEY")
     if not gemini_api_key:
@@ -235,7 +295,35 @@ def run_chat(
                 ],
             )
         )
-    contents.append(types.Content(role="user", parts=[types.Part.from_text(text=message)]))
+    if tool_name:
+        contents.append(
+            types.Content(
+                role="model",
+                parts=[
+                    types.Part(
+                        function_call=types.FunctionCall(
+                            name=tool_name,
+                            args=tool_args or {},
+                            **({"id": tool_call_id} if tool_call_id else {}),
+                        )
+                    )
+                ],
+            )
+        )
+        contents.append(
+            types.Content(
+                role="user",
+                parts=[
+                    types.Part.from_function_response(
+                        name=tool_name,
+                        response={"result": tool_result},
+                        **({"id": tool_call_id} if tool_call_id else {}),
+                    )
+                ],
+            )
+        )
+    if message:
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=message)]))
 
     config = types.GenerateContentConfig(
         system_instruction=build_system_prompt(),
@@ -268,6 +356,27 @@ def run_chat(
 
             function_response_parts = []
             for function_call in function_calls:
+                if function_call.name == "query_local_mcp":
+                    relay_args = dict(getattr(function_call, "args", {}) or {})
+                    return {
+                        "status": "requires_local_action",
+                        "action": {
+                            "tool": "query_local_mcp",
+                            "args": {
+                                "query": str(relay_args.get("query") or "").strip(),
+                            },
+                        },
+                        "tool_trace": tool_trace
+                        + [
+                            {
+                                "tool": function_call.name,
+                                "args": relay_args,
+                                "relay_required": True,
+                                "tool_call_id": getattr(function_call, "id", None),
+                            }
+                        ],
+                    }
+
                 result = _dispatch_tool(
                     function_call.name,
                     getattr(function_call, "args", {}) or {},
@@ -292,6 +401,7 @@ def run_chat(
             contents.append(types.Content(role="tool", parts=function_response_parts))
 
     return {
+        "status": "completed",
         "answer": (response.text or "I do not have enough data to conclude yet.").strip()
         if response is not None
         else "I do not have enough data to conclude yet.",
